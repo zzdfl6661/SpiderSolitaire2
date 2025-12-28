@@ -1,10 +1,12 @@
 package model;
 
+import java.awt.Color;
+
 public class Card {
     public enum Suit { SPADES, HEARTS, CLUBS, DIAMONDS }
 
     private Suit suit;
-    private int rank; // 1~13 (A~K)
+    private int rank;
     private boolean faceUp;
 
     public Card(Suit suit, int rank) {
@@ -18,7 +20,6 @@ public class Card {
     public boolean isFaceUp() { return faceUp; }
     public void flip() { faceUp = !faceUp; }
     
-    // 将数字rank转换为对应的符号（A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K）
     public String getRankSymbol() {
         switch (rank) {
             case 1: return "A";
@@ -26,6 +27,26 @@ public class Card {
             case 12: return "Q";
             case 13: return "K";
             default: return String.valueOf(rank);
+        }
+    }
+
+    public String getSuitSymbol() {
+        switch (suit) {
+            case SPADES: return "♠";
+            case HEARTS: return "♥";
+            case CLUBS: return "♣";
+            case DIAMONDS: return "♦";
+            default: return "";
+        }
+    }
+
+    public Color getSuitColor() {
+        switch (suit) {
+            case HEARTS:
+            case DIAMONDS:
+                return Color.RED;
+            default:
+                return Color.BLACK;
         }
     }
 

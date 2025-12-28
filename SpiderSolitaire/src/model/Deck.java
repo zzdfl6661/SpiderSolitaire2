@@ -8,10 +8,18 @@ public class Deck {
     public Deck(int difficulty) {
         List<Card.Suit> suits = new ArrayList<>();
 
-        // 无论难度如何，都只使用一个花色（黑桃）
-        suits.add(Card.Suit.SPADES);
+        if (difficulty == 1) {
+            suits.add(Card.Suit.SPADES);
+        } else if (difficulty == 2) {
+            suits.add(Card.Suit.SPADES);
+            suits.add(Card.Suit.HEARTS);
+        } else {
+            suits.add(Card.Suit.SPADES);
+            suits.add(Card.Suit.HEARTS);
+            suits.add(Card.Suit.CLUBS);
+            suits.add(Card.Suit.DIAMONDS);
+        }
 
-        // 每种花色的牌有13张，总共8组
         for (int i = 0; i < 8; i++) {
             for (Card.Suit suit : suits) {
                 for (int rank = 1; rank <= 13; rank++) {

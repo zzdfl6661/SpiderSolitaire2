@@ -10,25 +10,51 @@ import model.Card;
 public class GameFrame extends JFrame {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            GameFrame frame = new GameFrame();
+            String[] options = {"单花色（简单）", "双花色（中等）", "四花色（困难）"};
+            int choice = JOptionPane.showOptionDialog(null, 
+                "请选择游戏难度：\n\n" +
+                "单花色：全部使用一种花色，最简单\n" +
+                "双花色：使用两种花色，中等难度\n" +
+                "四花色：使用四种花色，最困难",
+                "选择难度", 
+                JOptionPane.DEFAULT_OPTION, 
+                JOptionPane.QUESTION_MESSAGE, 
+                null, 
+                options, 
+                options[0]);
+
+            int difficulty;
+            switch (choice) {
+                case 0: difficulty = 1; break;
+                case 1: difficulty = 2; break;
+                case 2: difficulty = 4; break;
+                default: difficulty = 1; break;
+            }
+            
+            GameFrame frame = new GameFrame(difficulty);
             frame.setVisible(true);
         });
     }
-    private final SpiderGame game;  // game 应该是 final
-    private final Point mousePoint = new Point(0, 0);  // mousePoint 应该是 final
-    private Card draggedCard = null;  // 当前拖动的纸牌
-    private int draggedColumn = -1;   // 当前拖动的列
-    private int draggedCount = 1;     // 当前拖动的牌数
+    
+    private final SpiderGame game;
+    private final Point mousePoint = new Point(0, 0);
+    private Card draggedCard = null;
+    private int draggedColumn = -1;
+    private int draggedCount = 1;
 
-    public GameFrame() {
-        game = new SpiderGame(2);  // 难度设为 2（两种花色）
+    public GameFrame(int difficulty) {
+        game = new SpiderGame(difficulty);
 
-        setTitle("蜘蛛纸牌");
+        String difficultyName;
+        if (difficulty == 1) difficultyName = "单花色";
+        else if (difficulty == 2) difficultyName = "双花色";
+        else difficultyName = "四花色";
+        
+        setTitle("蜘蛛纸牌 - " + difficultyName);
         setSize(1000, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // 按钮
         JPanel panel = new JPanel();
         JButton undoBtn = new JButton("撤销");
         undoBtn.addActionListener(e -> {
@@ -49,12 +75,10 @@ public class GameFrame extends JFrame {
         panel.add(hintBtn);
         add(panel, BorderLayout.SOUTH);
 
-        // 绘制纸牌的面板
         GameBoard board = new GameBoard(game);
         add(board, BorderLayout.CENTER);
     }
 
-    // 用于绘制纸牌的自定义面板
     private class GameBoard extends JPanel {
         private final SpiderGame game;
 
@@ -69,11 +93,9 @@ public class GameFrame extends JFrame {
                         Stack<Card> column = game.getState().columns[draggedColumn];
                         if (column.isEmpty()) return;
                         
-                        // 找到用户点击的具体牌
                         int clickY = e.getY();
                         int cardIndex = -1;
                         
-                        // 从下往上检查哪张牌被点击
                         for (int j = column.size() - 1; j >= 0; j--) {
                             int cardY;
                             if (j == 0) {
@@ -87,7 +109,6 @@ public class GameFrame extends JFrame {
                                 }
                             }
                             
-                            // 检查点击是否在该牌的范围内
                             if (clickY >= cardY && clickY <= cardY + 90) {
                                 cardIndex = j;
                                 break;
@@ -95,11 +116,9 @@ public class GameFrame extends JFrame {
                         }
                         
                         if (cardIndex != -1 && column.get(cardIndex).isFaceUp()) {
-                            // 计算可以拖动的最大连续牌数
-                            draggedCard = column.get(cardIndex); // 点击的牌
-                            draggedCount = 1; // 至少可以拖动当前点击的牌
+                            draggedCard = column.get(cardIndex);
+                            draggedCount = 1;
                             
-                            // 检查从点击的牌开始是否有连续递减的牌
                             for (int i = cardIndex; i < column.size() - 1; i++) {
                                 Card current = column.get(i);
                                 Card next = column.get(i + 1);
@@ -121,16 +140,14 @@ public class GameFrame extends JFrame {
                     if (draggedCard != null) {
                         int targetColumn = getColumnAt(e.getPoint());
                         if (targetColumn != -1 && targetColumn != draggedColumn) {
-                            game.move(draggedColumn, targetColumn, draggedCount);  // 移动多张纸牌
-                            // 检查是否有完整的牌组可以移除
+                            game.move(draggedColumn, targetColumn, draggedCount);
                             game.checkAndRemoveCompleteSets();
-                            // 检查游戏是否胜利
                             if (game.isGameWon()) {
                                 JOptionPane.showMessageDialog(GameFrame.this, "恭喜！你赢了！");
                             }
                         }
                         draggedCard = null;
-                        draggedColumn = -1; // 重置拖动列
+                        draggedColumn = -1;
                         repaint();
                     }
                 }
@@ -139,7 +156,7 @@ public class GameFrame extends JFrame {
             addMouseMotionListener(new MouseMotionAdapter() {
                 @Override
                 public void mouseDragged(MouseEvent e) {
-                    mousePoint.setLocation(e.getPoint());  // 更新拖动位置
+                    mousePoint.setLocation(e.getPoint());
                     repaint();
                 }
             });
@@ -148,11 +165,9 @@ public class GameFrame extends JFrame {
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
-            // 设置绿色背景，模拟真实纸牌游戏桌面
             g.setColor(new Color(0, 100, 0));
             g.fillRect(0, 0, getWidth(), getHeight());
             
-            // 绘制完成牌组的显示区域和分数
             int completedSets = game.getState().completedSets;
             int score = game.getState().score;
             g.setColor(Color.WHITE);
@@ -160,7 +175,6 @@ public class GameFrame extends JFrame {
             g.drawString("已完成: " + completedSets + "/8", 30, 20);
             g.drawString("分数: " + score, 300, 20);
             
-            // 绘制完成区域的图形表示
             int completedAreaX = 120;
             int completedAreaY = 10;
             for (int i = 0; i < 8; i++) {
@@ -170,23 +184,19 @@ public class GameFrame extends JFrame {
                 g.drawRect(completedAreaX + i * 20, completedAreaY, 14, 14);
             }
             
-            // 绘制每张纸牌
             for (int i = 0; i < game.getState().columns.length; i++) {
                 Stack<Card> column = game.getState().columns[i];
                 for (int j = 0; j < column.size(); j++) {
                     Card card = column.get(j);
                     int x = 30 + i * 80;
-                    // 调整垂直间距：背面朝上的牌完全堆叠，正面朝上的牌部分重叠
                     int y;
                     if (j == 0) {
-                        y = 30; // 第一张牌的位置
+                        y = 30;
                     } else {
                         Card prevCard = column.get(j - 1);
                         if (prevCard.isFaceUp()) {
-                            // 前面的牌是正面朝上，部分重叠（15像素间距）
                             y = 30 + (j - 1) * 30 + 15;
                         } else {
-                            // 前面的牌是背面朝上，完全堆叠
                             y = 30 + j * 30;
                         }
                     }
@@ -194,23 +204,24 @@ public class GameFrame extends JFrame {
                     int height = 90;
                     
                     if (card.isFaceUp()) {
-                        // 正面朝上的纸牌：白色背景，黑色边框和文字
                         g.setColor(Color.WHITE);
                         g.fillRect(x, y, width, height);
                         g.setColor(Color.BLACK);
                         g.drawRect(x, y, width - 1, height - 1);
-                        // 在左上角标注数字
+                        
+                        Color suitColor = card.getSuitColor();
+                        g.setColor(suitColor);
+                        g.setFont(new Font("Arial", Font.BOLD, 16));
                         String rankSymbol = card.getRankSymbol();
-                        g.drawString(rankSymbol, x + 5, y + 15);
-                        // 在右下角标注数字（不旋转坐标系，直接计算位置）
-                        g.drawString(rankSymbol, x + width - 15, y + height - 5);
+                        g.drawString(rankSymbol, x + 5, y + 18);
+                        g.drawString(card.getSuitSymbol(), x + 5, y + 35);
+                        g.setFont(new Font("Arial", Font.BOLD, 24));
+                        g.drawString(card.getSuitSymbol(), x + width / 2 - 8, y + height / 2 + 8);
                     } else {
-                        // 背面朝上的纸牌：蓝色背景，深蓝色边框
                         g.setColor(new Color(0, 0, 128));
                         g.fillRect(x, y, width, height);
                         g.setColor(new Color(0, 0, 64));
                         g.drawRect(x, y, width - 1, height - 1);
-                        // 添加简单的背面图案
                         g.setColor(new Color(0, 0, 192));
                         g.drawLine(x + 10, y + 10, x + 50, y + 80);
                         g.drawLine(x + 50, y + 10, x + 10, y + 80);
@@ -218,7 +229,6 @@ public class GameFrame extends JFrame {
                 }
             }
 
-            // 绘制正在拖动的纸牌
             if (draggedCard != null && draggedColumn != -1) {
                 Stack<Card> sourceColumn = game.getState().columns[draggedColumn];
                 int x = mousePoint.x - 30;
@@ -226,21 +236,21 @@ public class GameFrame extends JFrame {
                 int width = 60;
                 int height = 90;
                 
-                // 绘制所有被拖动的牌
                 int startIndex = sourceColumn.size() - draggedCount;
                 for (int i = 0; i < draggedCount; i++) {
                     Card card = sourceColumn.get(startIndex + i);
-                    int cardY = y + i * 15;  // 15像素间距
+                    int cardY = y + i * 15;
                     
                     if (card.isFaceUp()) {
                         g.setColor(Color.WHITE);
                         g.fillRect(x, cardY, width, height);
                         g.setColor(Color.BLACK);
                         g.drawRect(x, cardY, width - 1, height - 1);
-                        // 在左上角标注数字
+                        Color suitColor = card.getSuit() == Card.Suit.HEARTS || card.getSuit() == Card.Suit.DIAMONDS 
+                            ? Color.RED : Color.BLACK;
+                        g.setColor(suitColor);
                         String rankSymbol = card.getRankSymbol();
                         g.drawString(rankSymbol, x + 5, cardY + 15);
-                        // 在右下角标注数字（不旋转坐标系，直接计算位置）
                         g.drawString(rankSymbol, x + width - 15, cardY + height - 5);
                     } else {
                         g.setColor(new Color(0, 0, 128));
@@ -255,7 +265,6 @@ public class GameFrame extends JFrame {
             }
         }
 
-        // 根据鼠标位置确定列
         private int getColumnAt(Point p) {
             for (int i = 0; i < game.getState().columns.length; i++) {
                 if (p.x >= 30 + i * 80 && p.x <= 30 + (i + 1) * 80) {

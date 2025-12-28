@@ -1,7 +1,8 @@
 package game;
 
-import java.util.List;
 import model.Card;
+
+import java.util.List;
 
 public class Move {
     public int from;
