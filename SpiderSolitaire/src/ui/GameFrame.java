@@ -103,13 +103,13 @@ public class GameFrame extends JFrame {
                         for (int j = column.size() - 1; j >= 0; j--) {
                             int cardY;
                             if (j == 0) {
-                                cardY = 30;
+                                cardY = 50;
                             } else {
                                 Card prevCard = column.get(j - 1);
                                 if (prevCard.isFaceUp()) {
-                                    cardY = 30 + (j - 1) * 30 + 15;
+                                    cardY = 50 + (j - 1) * 25 + 25;
                                 } else {
-                                    cardY = 30 + j * 30;
+                                    cardY = 50 + j * 25;
                                 }
                             }
                             
@@ -185,17 +185,21 @@ public class GameFrame extends JFrame {
             int score = game.getState().score;
             g.setColor(Color.WHITE);
             g.setFont(new Font("Arial", Font.BOLD, 14));
-            g.drawString("已完成: " + completedSets + "/8", 30, 20);
-            g.drawString("分数: " + score, 300, 20);
+            g.drawString("已完成: " + completedSets + "/8", 30, 25);
+            g.drawString("分数: " + score, 300, 25);
             
             int completedAreaX = 120;
-            int completedAreaY = 10;
+            int completedAreaY = 15;
             for (int i = 0; i < 8; i++) {
                 g.setColor(i < completedSets ? new Color(255, 255, 0) : new Color(200, 200, 200));
                 g.fillRect(completedAreaX + i * 20, completedAreaY, 15, 15);
                 g.setColor(Color.BLACK);
                 g.drawRect(completedAreaX + i * 20, completedAreaY, 14, 14);
             }
+            
+            int firstCardY = 50;
+            int faceUpSpacing = 25;
+            int faceDownSpacing = 25;
             
             for (int i = 0; i < game.getState().columns.length; i++) {
                 Stack<Card> column = game.getState().columns[i];
@@ -204,13 +208,13 @@ public class GameFrame extends JFrame {
                     int x = 30 + i * 80;
                     int y;
                     if (j == 0) {
-                        y = 30;
+                        y = firstCardY;
                     } else {
                         Card prevCard = column.get(j - 1);
                         if (prevCard.isFaceUp()) {
-                            y = 30 + (j - 1) * 30 + 15;
+                            y = firstCardY + (j - 1) * faceUpSpacing + faceUpSpacing;
                         } else {
-                            y = 30 + j * 30;
+                            y = firstCardY + j * faceDownSpacing;
                         }
                     }
                     int width = 60;

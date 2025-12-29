@@ -1,1 +1,1 @@
-{"totalWins":0,"achievements":[{"id":"newbie","name":"纸牌新手","description":"通关3次","requiredWins":3,"unlocked":false},{"id":"master","name":"纸牌大师","description":"通关10次","requiredWins":10,"unlocked":false},{"id":"king","name":"纸牌王者","description":"通关50次","requiredWins":50,"unlocked":false}]}
+{"totalWins":3,"achievements":[{"id":"newbie","name":"纸牌新手","description":"通关3次","requiredWins":3,"unlocked":true},{"id":"master","name":"纸牌大师","description":"通关10次","requiredWins":10,"unlocked":false},{"id":"king","name":"纸牌王者","description":"通关50次","requiredWins":50,"unlocked":false}]}
