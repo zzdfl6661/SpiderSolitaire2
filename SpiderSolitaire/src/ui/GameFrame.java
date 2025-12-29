@@ -6,6 +6,7 @@ import java.awt.event.*;
 import java.util.Stack;
 import javax.swing.*;
 import model.Card;
+import util.AchievementManager;
 
 public class GameFrame extends JFrame {
     public static void main(String[] args) {
@@ -70,9 +71,12 @@ public class GameFrame extends JFrame {
         });
         JButton hintBtn = new JButton("提示");
         hintBtn.addActionListener(e -> JOptionPane.showMessageDialog(this, game.hint()));
+        JButton achievementBtn = new JButton("成就");
+        achievementBtn.addActionListener(e -> new AchievementDialog(this).setVisible(true));
         panel.add(undoBtn);
         panel.add(dealBtn);
         panel.add(hintBtn);
+        panel.add(achievementBtn);
         add(panel, BorderLayout.SOUTH);
 
         GameBoard board = new GameBoard(game);
@@ -143,7 +147,16 @@ public class GameFrame extends JFrame {
                             game.move(draggedColumn, targetColumn, draggedCount);
                             game.checkAndRemoveCompleteSets();
                             if (game.isGameWon()) {
-                                JOptionPane.showMessageDialog(GameFrame.this, "恭喜！你赢了！");
+                                AchievementManager.getInstance().addWin();
+                                StringBuilder message = new StringBuilder("恭喜！你赢了！\n\n");
+                                message.append("这是你第 ").append(AchievementManager.getInstance().getTotalWins()).append(" 次通关！\n\n");
+                                
+                                for (AchievementManager.Achievement a : AchievementManager.getInstance().getUnlockedAchievements()) {
+                                    if (!message.toString().contains(a.name)) {
+                                        message.append("★ 获得成就: ").append(a.name).append("\n");
+                                    }
+                                }
+                                JOptionPane.showMessageDialog(GameFrame.this, message.toString());
                             }
                         }
                         draggedCard = null;
