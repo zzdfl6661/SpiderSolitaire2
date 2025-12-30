@@ -9,10 +9,7 @@ import model.Card;
  * 存储移动的起始列、目标列、移动的牌列表以及翻牌状态等信息
  */
 public class Move {
-    /**
-     * 移动的起始列索引
-     * -1表示发牌操作，-2表示移除完整牌组操作
-     */
+
     public int from;
     
     /**

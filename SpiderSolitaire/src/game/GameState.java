@@ -56,11 +56,13 @@ public class GameState {
         for (int i = 0; i < 10; i++) {
             columns[i] = new Stack<>();
             // 前4列发6张牌，后6列发5张牌
-            for (int j = 0; j < (i < 4 ? 6 : 5); j++) {
+            for (int j = 0; j < (i < 4 ? 6 : 5); j++) {//内层循环控制每个牌列的发牌数量
+                //Java 中唯一的三目运算符，本质是简化的 if-else,前4列发6张，后四列发5张
                 Card card = deck.draw();
                 // 每列的最底部牌(最后发的牌)需要翻面显示为正面
                 if (j == (i < 4 ? 5 : 4)) card.flip(); // 最底部的牌翻面
-                columns[i].push(card);
+                //判断当前发的是否是该列最后一张牌，如果是则执行 card.flip() 翻面,
+                columns[i].push(card);//将抽到的牌压入当前牌列的栈中push()是栈的 “压栈” 操作，新牌会成为栈顶，即视觉上最上方的牌
             }
         }
         
