@@ -8,9 +8,19 @@ import javax.swing.*;
 import model.Card;
 import util.AchievementManager;
 
+/**
+ * 游戏主窗口类
+ * 负责创建游戏界面、处理用户交互、显示游戏状态和成就系统
+ */
 public class GameFrame extends JFrame {
+    /**
+     * 程序入口点
+     * @param args 命令行参数
+     */
     public static void main(String[] args) {
+        // 在事件分发线程中创建GUI，确保线程安全
         SwingUtilities.invokeLater(() -> {
+            // 创建难度选择对话框
             String[] options = {"单花色（简单）", "双花色（中等）", "四花色（困难）"};
             int choice = JOptionPane.showOptionDialog(null, 
                 "请选择游戏难度：\n\n" +
@@ -24,149 +34,238 @@ public class GameFrame extends JFrame {
                 options, 
                 options[0]);
 
+            // 根据用户选择设置游戏难度
             int difficulty;
             switch (choice) {
-                case 0: difficulty = 1; break;
-                case 1: difficulty = 2; break;
-                case 2: difficulty = 4; break;
-                default: difficulty = 1; break;
+                case 0: difficulty = 1; break; // 单花色
+                case 1: difficulty = 2; break; // 双花色
+                case 2: difficulty = 4; break; // 四花色
+                default: difficulty = 1; break; // 默认单花色
             }
             
+            // 创建并显示游戏窗口
             GameFrame frame = new GameFrame(difficulty);
             frame.setVisible(true);
         });
     }
     
+    /**
+     * 游戏核心逻辑对象，负责处理游戏规则和状态管理
+     */
     private final SpiderGame game;
+    
+    /**
+     * 鼠标位置跟踪，用于拖拽操作
+     */
     private final Point mousePoint = new Point(0, 0);
+    
+    /**
+     * 当前正在拖拽的牌
+     */
     private Card draggedCard = null;
+    
+    /**
+     * 拖拽操作中牌来源的列索引
+     */
     private int draggedColumn = -1;
+    
+    /**
+     * 拖拽操作中要移动的牌的数量
+     */
     private int draggedCount = 1;
 
+    /**
+     * 游戏窗口构造函数
+     * @param difficulty 游戏难度级别：1=单花色，2=双花色，4=四花色
+     */
     public GameFrame(int difficulty) {
+        // 创建游戏对象
         game = new SpiderGame(difficulty);
 
+        // 根据难度设置窗口标题
         String difficultyName;
         if (difficulty == 1) difficultyName = "单花色";
         else if (difficulty == 2) difficultyName = "双花色";
         else difficultyName = "四花色";
         
+        // 设置窗口基本属性
         setTitle("蜘蛛纸牌 - " + difficultyName);
         setSize(1000, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
+        // 创建底部按钮面板
         JPanel panel = new JPanel();
+        
+        // 创建撤销按钮
         JButton undoBtn = new JButton("撤销");
+        // 创建发牌按钮，显示剩余发牌次数
         JButton dealBtn = new JButton("发牌(" + game.getState().remainingDeals + ")");
+        
+        // 撤销按钮事件监听器
         undoBtn.addActionListener(e -> {
-            game.undo();
+            game.undo(); // 执行撤销操作
             // 更新发牌按钮的剩余次数显示
             dealBtn.setText("发牌(" + game.getState().remainingDeals + ")");
-            repaint();
+            repaint(); // 重绘界面
         });
+        
+        // 发牌按钮事件监听器
         dealBtn.addActionListener(e -> {
             if (!game.deal()) {
+                // 发牌失败时显示错误信息
                 JOptionPane.showMessageDialog(this, "发牌失败！请确保每列至少有一张牌，并且牌堆中有足够的牌。");
             } else {
-                // 成功发牌后更新按钮文本
+                // 成功发牌后更新按钮文本显示剩余次数
                 dealBtn.setText("发牌(" + game.getState().remainingDeals + ")");
             }
-            repaint();
+            repaint(); // 重绘界面显示更新后的状态
         });
+        
+        // 创建提示按钮
         JButton hintBtn = new JButton("提示");
         hintBtn.addActionListener(e -> JOptionPane.showMessageDialog(this, game.hint()));
+        
+        // 创建成就按钮
         JButton achievementBtn = new JButton("成就");
         achievementBtn.addActionListener(e -> new AchievementDialog(this).setVisible(true));
+        
+        // 将按钮添加到面板中
         panel.add(undoBtn);
         panel.add(dealBtn);
         panel.add(hintBtn);
         panel.add(achievementBtn);
+        // 将按钮面板添加到窗口底部
         add(panel, BorderLayout.SOUTH);
 
+        // 创建并添加游戏棋盘面板到窗口中央
         GameBoard board = new GameBoard(game);
         add(board, BorderLayout.CENTER);
     }
 
+    /**
+     * 游戏棋盘内部类
+     * 负责绘制游戏界面、处理鼠标事件、显示牌面等
+     */
     private class GameBoard extends JPanel {
         private final SpiderGame game;
 
+        /**
+         * 游戏棋盘构造函数
+         * @param game 游戏对象
+         */
         public GameBoard(SpiderGame game) {
             this.game = game;
+            // 设置棋盘首选大小
             setPreferredSize(new Dimension(800, 500));
+            // 添加鼠标事件监听器
             addMouseListener(new MouseAdapter() {
+                /**
+                 * 鼠标按下事件处理
+                 * 开始拖拽操作，识别用户点击的是哪张牌
+                 */
                 @Override
                 public void mousePressed(MouseEvent e) {
+                    // 获取鼠标点击位置对应的列索引
                     draggedColumn = getColumnAt(e.getPoint());
+                    
+                    // 如果点击位置在有效范围内
                     if (draggedColumn != -1) {
                         Stack<Card> column = game.getState().columns[draggedColumn];
+                        
+                        // 如果该列为空，返回
                         if (column.isEmpty()) return;
                         
-                        int clickY = e.getY();
-                        int cardIndex = -1;
+                        int clickY = e.getY(); // 鼠标Y坐标
+                        int cardIndex = -1;    // 点击的牌的索引
                         
+                        // 从后往前遍历列中的牌，找到用户点击的牌
                         for (int j = column.size() - 1; j >= 0; j--) {
-                            int cardY;
+                            int cardY; // 当前牌的Y坐标
+                            
                             if (j == 0) {
+                                // 第一张牌的Y坐标固定为50
                                 cardY = 50;
                             } else {
                                 Card prevCard = column.get(j - 1);
                                 if (prevCard.isFaceUp()) {
+                                    // 如果前面的牌是正面朝上，间距较小
                                     cardY = 50 + (j - 1) * 25 + 25;
                                 } else {
+                                    // 如果前面的牌是背面朝上，间距较大
                                     cardY = 50 + j * 25;
                                 }
                             }
                             
+                            // 检查鼠标点击是否在该牌的范围内
                             if (clickY >= cardY && clickY <= cardY + 90) {
                                 cardIndex = j;
                                 break;
                             }
                         }
                         
+                        // 如果点击的是正面朝上的牌，开始拖拽
                         if (cardIndex != -1 && column.get(cardIndex).isFaceUp()) {
                             draggedCard = column.get(cardIndex);
                             draggedCount = 1;
                             
+                            // 计算可以拖拽的连续牌组数量（必须是连续递减的）
                             for (int i = cardIndex; i < column.size() - 1; i++) {
                                 Card current = column.get(i);
                                 Card next = column.get(i + 1);
                                 if (current.getRank() == next.getRank() + 1) {
                                     draggedCount++;
                                 } else {
-                                    break;
+                                    break; // 不是连续递减时停止
                                 }
                             }
                         } else {
+                            // 点击的不是有效的牌，清空拖拽状态
                             draggedCard = null;
                             draggedCount = 1;
                         }
                     }
                 }
 
+                /**
+                 * 鼠标释放事件处理
+                 * 完成拖拽操作，执行牌的移动或取消
+                 */
                 @Override
                 public void mouseReleased(MouseEvent e) {
+                    // 如果正在进行拖拽操作
                     if (draggedCard != null) {
+                        // 获取鼠标释放位置对应的列索引
                         int targetColumn = getColumnAt(e.getPoint());
+                        
+                        // 如果目标列有效且不是源列，执行移动
                         if (targetColumn != -1 && targetColumn != draggedColumn) {
                             game.move(draggedColumn, targetColumn, draggedCount);
                             game.checkAndRemoveCompleteSets();
+                            
+                            // 检查是否获胜
                             if (game.isGameWon()) {
+                                // 增加胜利次数记录
                                 AchievementManager.getInstance().addWin();
                                 StringBuilder message = new StringBuilder("恭喜！你赢了！\n\n");
                                 message.append("这是你第 ").append(AchievementManager.getInstance().getTotalWins()).append(" 次通关！\n\n");
                                 
+                                // 检查是否获得新成就
                                 for (AchievementManager.Achievement a : AchievementManager.getInstance().getUnlockedAchievements()) {
                                     if (!message.toString().contains(a.name)) {
                                         message.append("★ 获得成就: ").append(a.name).append("\n");
                                     }
                                 }
+                                
+                                // 显示胜利信息和成就
                                 JOptionPane.showMessageDialog(GameFrame.this, message.toString());
                             }
                         }
+                        
+                        // 清除拖拽状态
                         draggedCard = null;
                         draggedColumn = -1;
-                        repaint();
+                        repaint(); // 重绘界面
                     }
                 }
             });
