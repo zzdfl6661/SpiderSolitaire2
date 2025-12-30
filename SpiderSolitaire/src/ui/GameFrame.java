@@ -58,14 +58,19 @@ public class GameFrame extends JFrame {
 
         JPanel panel = new JPanel();
         JButton undoBtn = new JButton("撤销");
+        JButton dealBtn = new JButton("发牌(" + game.getState().remainingDeals + ")");
         undoBtn.addActionListener(e -> {
             game.undo();
+            // 更新发牌按钮的剩余次数显示
+            dealBtn.setText("发牌(" + game.getState().remainingDeals + ")");
             repaint();
         });
-        JButton dealBtn = new JButton("发牌");
         dealBtn.addActionListener(e -> {
             if (!game.deal()) {
                 JOptionPane.showMessageDialog(this, "发牌失败！请确保每列至少有一张牌，并且牌堆中有足够的牌。");
+            } else {
+                // 成功发牌后更新按钮文本
+                dealBtn.setText("发牌(" + game.getState().remainingDeals + ")");
             }
             repaint();
         });

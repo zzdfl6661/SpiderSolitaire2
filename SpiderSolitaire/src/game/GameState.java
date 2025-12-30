@@ -1,9 +1,8 @@
 package game;
 
+import java.util.*;
 import model.Card;
 import model.Deck;
-
-import java.util.*;
 
 public class GameState {
     public Stack<Card>[] columns = new Stack[10]; // 10列
@@ -11,6 +10,7 @@ public class GameState {
     public Stack<Move> undoStack = new Stack<>();  // 撤销栈
     public int score = 500;
     public int completedSets = 0;
+    public int remainingDeals = 5;
 
     public GameState(int difficulty) {
         Deck deck = new Deck(difficulty);

@@ -107,6 +107,8 @@ public class SpiderGame {
                     state.stock.push(card);
                 }
             }
+            // 恢复剩余发牌次数
+            state.remainingDeals++;
         } 
         // 处理移除完整牌组操作的撤销
         else if (m.to == -2) {
@@ -172,6 +174,11 @@ public class SpiderGame {
     
     // 发牌方法
     public boolean deal() {
+        // 检查剩余发牌次数
+        if (state.remainingDeals <= 0) {
+            return false; // 没有剩余发牌次数了
+        }
+        
         // 检查每一列是否至少有一张牌
         for (int i = 0; i < 10; i++) {
             if (state.columns[i].isEmpty()) {
@@ -197,7 +204,8 @@ public class SpiderGame {
         
         // 将发牌操作添加到撤销栈
         state.undoStack.push(new Move(-1, -1, dealtCards, false, true, null));
-        // 发牌不扣分，只有合法移动才扣分
+        // 减少剩余发牌次数
+        state.remainingDeals--;
         
         return true;
     }
