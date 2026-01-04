@@ -1,5 +1,6 @@
 package game;
 
+import java.io.Serializable;
 import java.util.*;
 import model.Card;
 import model.Deck;
@@ -7,8 +8,9 @@ import model.Deck;
 /**
  * 游戏状态管理类
  * 负责维护蜘蛛纸牌游戏的所有状态信息
+ * 实现Serializable接口以支持对象序列化，用于保存游戏状态
  */
-public class GameState {
+public class GameState implements Serializable {
     /**
      * 游戏牌列数组，共10列，用于存放玩家手中的牌
      * 每列是一个栈结构，栈顶是可见的牌
@@ -50,7 +52,7 @@ public class GameState {
      * @param difficulty 游戏难度级别：1=单花色(简单)，2=双花色(中等)，4=四花色(困难)
      */
     public GameState(int difficulty) {
-        Deck deck = new Deck(difficulty);
+        Deck deck = new Deck(difficulty);//"创建一个新的Deck对象实例，并将其赋值给名为deck的变量"。
         
         // 初始化10个牌列，前4列各6张牌，后6列各5张牌
         for (int i = 0; i < 10; i++) {

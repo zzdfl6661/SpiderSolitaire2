@@ -5,22 +5,82 @@ import model.Card;
 
 /**
  * 蜘蛛纸牌游戏核心逻辑类
- * 负责处理游戏的所有核心逻辑，包括移动验证、游戏操作、撤销等
+ * 
+ * 这是蜘蛛纸牌游戏的核心控制类，负责处理游戏的所有核心逻辑：
+ * - 移动验证：检查牌移动是否符合游戏规则
+ * - 游戏操作：执行移动、发牌、撤销等操作
+ * - 游戏状态管理：维护游戏进度、分数、完成度等
+ * - 提示系统：为玩家提供游戏建议
+ * - 胜利判断：检测游戏是否获胜
+ * 
+ * 该类通过组合GameState对象来管理游戏状态，并提供各种操作方法
+ * 与UI层（GameFrame）解耦，专注于游戏逻辑处理
  */
 public class SpiderGame {
+    /**
+     * 游戏状态对象
+     * 
+     * 这是蜘蛛纸牌游戏的核心状态容器，包含：
+     * - 10个游戏列（columns）
+     * - 剩余牌堆（stock）
+     * - 撤销操作栈（undoStack）
+     * - 游戏统计信息（分数、完成牌组数等）
+     * - 剩余发牌次数（remainingDeals）
+     * 
+     * 这个字段很重要，几乎所有游戏操作都需要通过state来访问和修改游戏状态
+     * 
+     * @see GameState
+     */
     private GameState state;
 
     /**
      * 蜘蛛纸牌游戏构造函数
-     * @param difficulty 游戏难度：1=单花色(简单)，2=双花色(中等)，4=四花色(困难)
+     * 
+     * 初始化蜘蛛纸牌游戏，创建游戏状态对象并设置初始配置
+     * 
+     * @param difficulty 游戏难度级别，决定牌的花色数量：
+     *        1 = 单花色（最简单，所有牌使用一种花色）
+     *        2 = 双花色（中等难度，使用两种花色）
+     *        4 = 四花色（最困难，使用四种花色）
+     * 
+     * @see GameState#GameState(int)
      */
     public SpiderGame(int difficulty) {
-        state = new GameState(difficulty);
+        // 创建游戏状态对象，传递难度参数
+        // GameState构造函数会根据难度初始化牌堆、游戏列等
+        this.state = new GameState(difficulty);
+        
+        // 重要说明：
+        // state是GameState类的实例，它封装了游戏的所有状态信息
+        // 下面的很多方法都需要通过state.前缀来访问游戏状态
+        // 例如：state.columns、state.undoStack、state.score等
+    }
+
+    /**
+     * 蜘蛛纸牌游戏构造函数 - 从保存的游戏状态恢复
+     * 
+     * 使用已保存的游戏状态对象恢复游戏
+     * 
+     * @param savedState 已保存的游戏状态对象
+     */
+    public SpiderGame(GameState savedState) {
+        this.state = savedState;
     }
 
     /**
      * 获取当前游戏状态
-     * @return GameState 当前游戏状态对象
+     * 
+     * 这个方法为外部组件（主要是UI层）提供访问游戏状态的接口
+     * UI层可以通过这个方法获取游戏状态来显示游戏信息或进行其他操作
+     * 
+     * @return GameState 当前游戏状态对象，包含：
+     *         - 10个游戏列的状态
+     *         - 剩余牌堆信息
+     *         - 撤销操作栈
+     *         - 游戏统计信息（分数、完成牌组数等）
+     *         - 剩余发牌次数
+     * 
+     * @see GameState
      */
     public GameState getState() {
         return state;
@@ -28,64 +88,82 @@ public class SpiderGame {
 
     /**
      * 检查是否可以将指定数量的牌从源列移动到目标列
-     * @param from 源列索引
-     * @param to 目标列索引
-     * @param count 要移动的牌的数量
+     * 
+     * 这是蜘蛛纸牌游戏的核心规则验证方法，确保所有移动都符合游戏规则
+     * 蜘蛛纸牌的基本规则：
+     * 1. 只有正面朝上的牌才能移动
+     * 2. 移动的牌组必须是同花色且连续递减（K-Q-J-...-3-2-A）
+     * 3. K只能移动到空位上
+     * 4. 移动到非空列时，底部牌必须与目标列顶部牌连续递增
+     * 5. A只能接在2下面
+     * 
+     * @param from 源列索引（0-9），表示从哪一列移动牌
+     * @param to 目标列索引（0-9），表示移动到哪一列
+     * @param count 要移动的牌的数量，必须是连续的正整数
      * @return boolean 如果可以移动返回true，否则返回false
+     * 
+     * @see #move(int, int, int)
      */
     public boolean canMove(int from, int to, int count) {
+        // 获取源列和目标列的牌堆
         Stack<Card> src = state.columns[from];
         Stack<Card> dst = state.columns[to];
 
-        // 检查源列是否有足够的牌
+        // 基本检查：源列是否有足够的牌
         if (src.size() < count) return false;
 
+        // 获取关键牌面信息
         Card base = src.get(src.size() - count); // 要移动的牌组中最底部的牌
         Card top = src.peek(); // 源列最顶部的牌
         
-        // 检查K只能移动到空位上(蜘蛛纸牌规则)
+        // 特殊规则检查：K只能移动到空位上
+        // 这是蜘蛛纸牌的重要规则，国王(K)不能叠在其他牌上面
         if (base.getRank() == 13 && !dst.isEmpty()) {
             return false; // K只能移动到空位
         }
         
-        // 检查要移动的牌组是否都是正面朝上、同花色且连续递减
-        Card.Suit suit = base.getSuit(); // 记录牌组的花色
+        // 移动牌组的内部规则检查
+        Card.Suit suit = base.getSuit(); // 记录牌组的花色，用于后续同花色检查
         for (int i = src.size() - count; i < src.size(); i++) {
             Card current = src.get(i);
-            // 所有牌必须正面朝上才能移动
+            
+            // 规则1：所有牌必须正面朝上才能移动
             if (!current.isFaceUp()) {
-                return false; // 所有牌必须正面朝上
+                return false; // 背面朝上的牌不能移动
             }
-            // 所有牌必须同花色
+            
+            // 规则2：所有牌必须同花色
             if (current.getSuit() != suit) {
-                return false; // 必须同花色
+                return false; // 花色不匹配
             }
         }
         
-        // 检查移动的牌组是否按顺序递减(例如：KQJ...3-2-A)
+        // 规则3：检查移动的牌组是否按顺序递减
+        // 例如：K-Q-J-10-9-8-7-6-5-4-3-2-A（从大到小）
         for (int i = src.size() - count; i < src.size() - 1; i++) {
-            Card current = src.get(i);
-            Card next = src.get(i + 1);
-            // 当前牌的点数必须比下一张牌大1(连续递减)
+            Card current = src.get(i);      // 当前牌
+            Card next = src.get(i + 1);     // 下一张牌（更靠近顶部）
+            // 当前牌的点数必须比下一张牌大1（连续递减）
             if (current.getRank() != next.getRank() + 1) {
-                return false; // 必须连续递减
+                return false; // 不是连续递减的序列
             }
         }
 
-        // 如果目标列不为空，需要检查连接规则
+        // 目标列非空时的连接规则检查
         if (!dst.isEmpty()) {
             Card dstTop = dst.peek(); // 目标列最顶部的牌
             
-            // 检查A只能接在2下面(连续递增规则)
+            // 特殊规则：A只能接在2下面
             if (base.getRank() == 1 && dstTop.getRank() != 2) {
                 return false; // A只能接在2下面
             }
             
-            // 检查目标牌的点数是否比基础牌大1(连续递增)
+            // 主要连接规则：目标牌必须比基础牌大1（连续递增）
+            // 例如：将Q移动到K上面，形成K-Q序列
             return dstTop.getRank() == base.getRank() + 1;
         }
         
-        // 目标列为空时，任何牌都可以移动到这里
+        // 目标列为空时，任何符合规则的牌组都可以移动到这里
         return true;
     }
 
@@ -146,7 +224,7 @@ public class SpiderGame {
             // 从每一列取最后一张牌放回牌堆
             for (int i = 0; i < 10; i++) {
                 if (!state.columns[i].isEmpty()) {
-                    Card card = state.columns[i].pop();
+                    Card card = state.columns[i].pop();//默认删除最后一张
                     card.flip(); // 翻回背面
                     state.stock.push(card);
                 }

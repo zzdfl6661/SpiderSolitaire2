@@ -1,6 +1,6 @@
 package model;
 
-import java.util.*;
+import java.util.*;//直接导入整个包
 
 /**
  * 牌堆类
@@ -57,6 +57,8 @@ public class Deck {
     /**
      * 从牌堆中抽一张牌
      * @return 抽取的牌，如果牌堆为空则返回null
+     * 如果牌堆为空（ cards.isEmpty() 为 true），返回 null （表示没有牌可抽）
+     * 如果牌堆不为空，调用 cards.pop() 从牌堆中取出一张牌（通常是牌堆顶部的牌）
      */
     public Card draw() {
         return cards.isEmpty() ? null : cards.pop();

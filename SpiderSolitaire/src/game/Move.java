@@ -1,5 +1,6 @@
 package game;
 
+import java.io.Serializable;
 import java.util.List;
 import model.Card;
 
@@ -8,7 +9,7 @@ import model.Card;
  * 记录游戏中的操作，用于撤销功能
  * 存储移动的起始列、目标列、移动的牌列表以及翻牌状态等信息
  */
-public class Move {
+public class Move implements Serializable {
 
     public int from;
     
